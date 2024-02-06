@@ -1,3 +1,8 @@
+module mcexp_simulation
+
+reps_per_period(br_length::Float64, const_δt::Float64) = 
+round(Int64,cld(br_length,const_δt))
+
 
 """
     nconstant_sim!(Xt   ::Array{Float64,1},
@@ -191,8 +196,8 @@ Simulate the Matching-Competition model while taking into account pairwise dista
 """
 function MC(X_initial::Float64,
     tree_file::String;
-    m        = 1.0,
     σ²       = 0.5,
+    m        = 1.0,
     α        = 0.5,
     const_δt = 1e-4,
     ψ        = 0.0,
@@ -202,7 +207,7 @@ function MC(X_initial::Float64,
   0.0 >= σ² && error("σ² has to be > 0.0")
   0.0 >= m && error("m has to be > 0.0")
 
-  tree, bts = read_tree(tree_file)
+  tree, bts = read_nexus(tree_file)
 
   br = branching_times(tree)
 
@@ -264,14 +269,15 @@ function MC(X_initial::Float64,
     insert!(alive, wti+1, chs[2])
 
     nalive = length(alive)
-end
+  end
 
-tip_traits = 
-Dict(convert(Int64, alive[i]) => Xt[i]   for i = Base.OneTo(nalive))
+  tip_traits = 
+  Dict(convert(Int64, alive[i]) => Xt[i]   for i = Base.OneTo(nalive))
+  tip_areas = 
+  Dict(convert(Int64, alive[i]) => [1]   for i = Base.OneTo(nalive))
+  pop!(bts)
 
-pop!(bts)
-
-return tip_traits, tree, bts
+return tip_traits, tip_areas, tree, bts
 
 end
 
@@ -290,7 +296,7 @@ function plot_MC(X_initial::Float64,
   0.0 >= σ² && error("σ² has to be > 0.0")
   0.0 >= m && error("m has to be > 0.0")
 
-  tree, bts = read_tree(tree_file)
+  tree, bts = read_nexus(tree_file)
 
   br = branching_times(tree)
   # sort according to branching times
@@ -323,12 +329,9 @@ function plot_MC(X_initial::Float64,
   rate = sqrt(const_δt*σ²)
   # loop through waiting times
   for j in Base.OneTo(nbt)
-    println("Time")
-    println(Time)
     nreps = reps_per_period(swt[j], const_δt)
   # simulate during the speciation waiting time
     nconstant_sim2!(Xt, X_values, Time_values,Time, nreps, const_δt, m,rate, α, ψ, θ)
-    println(Time)
     if j == nbt
         break
     end
@@ -356,5 +359,8 @@ function plot_MC(X_initial::Float64,
 
   pop!(bts)
 
-  return tip_traits, tree, bts, X_values, Time_values, plot(Time_values,X_values)
+  return plot(Time_values,X_values)
 end
+
+
+end #end of the module

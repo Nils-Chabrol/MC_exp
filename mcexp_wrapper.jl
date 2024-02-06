@@ -1,3 +1,4 @@
+module mcexp_wrapper
 #=
 
 tribe wrapper.
@@ -101,6 +102,53 @@ function mcexp(tree_file   ::String,
 
   tip_values, tip_areas, tree, bts = 
     read_data_mcexp(tree_file, data_file)
+
+  X, Y, B, ncoup, δt, tree, si = 
+    initialize_data_mcexp(tip_values, tip_areas, min_dt, tree, bts)
+
+  R = mcexp_mcmc(X, Y, ncoup, δt,
+                 deepcopy(tree.ed), 
+                 deepcopy(tree.el), 
+                 B,
+                 niter    = niter,
+                 nthin    = nthin,
+                 nburn    = nburn,
+                 saveXY   = saveXY,
+                 saveDM   = saveDM,
+                 σ²prior  = σ²prior,
+                 αprior   = αprior,
+                 mprior   = mprior,
+                 out_file = out_file,
+                 weight   = weight,
+                 σ²i      = si,
+                 αi       = αi,
+                 mi       = mi,                 
+                 screen_print = screen_print)
+
+  return R
+
+end
+
+function mcexp(tip_values  ::Dict{Int64,Float64},
+               tip_areas   ::Dict{Int64,Array{Int64,1}},
+               tree        ::rtree,
+               bts         ::Array{Float64,1},
+               out_file    ::String,
+               min_dt      ::Float64           = 0.01,
+               niter       ::Int64             = 50000,
+               nburn       ::Int64             = 50,
+               nthin       ::Int64             = 1,
+               saveXY      ::Tuple{Bool,Int64} = (false, 1_000),
+               saveDM      ::Tuple{Bool,Int64} = (false, 1_000),
+               αi          ::Float64           = 1e-1,
+               mi          ::Float64           = 1e-1,
+               σ²prior     ::Float64           = 1e-1,
+               αprior     ::Float64           = 1e-1,
+               mprior     ::Float64           = 1e-1,               
+               weight      ::NTuple{4,Float64} = (0.1,0.1,0.1,5e-3),
+               delim       ::Char              = '\t',
+               eol         ::Char              = '\r',
+               screen_print::Int64             = 5)
 
   X, Y, B, ncoup, δt, tree, si = 
     initialize_data_mcexp(tip_values, tip_areas, min_dt, tree, bts)

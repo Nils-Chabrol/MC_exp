@@ -122,8 +122,7 @@ function read_data_mcexp(tree_file::String,
 
   tip_values = Dict(tip_labels[val] => data_values[i] 
   for (i,val) = enumerate(data_tlab)) #attribute a value to a tip number
-    tip_areas = Dict(tip_labels[val] => data_areas[i,:] 
-    for (i,val) = enumerate(data_tlab))
+    tip_areas = Dict(tip_labels[val] => data_areas[i,:]  for (i,val) = enumerate(data_tlab))
       return tip_values, tip_areas, tree, bts
 end
 

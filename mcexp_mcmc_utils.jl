@@ -437,7 +437,7 @@ function mhr_upd_α( αc      ::Float64,
                     αprior  ::Float64,
                     nstep   ::Int64,
                     αupd_llr::Function)
-  αp = mulupt(αc, rand() < 0.3 ? αtn : 30.0*αtn)::Float64
+  αp = mulupt(αc, rand() < 0.3 ? αtn : 4.0*αtn)::Float64
         #likelihood ratio
   llr,LAp = αupd_llr(Xc, δXc, δYc, LAc, wcol, mc, αp, σ²c, nstep)
   # prior ratio
@@ -616,7 +616,6 @@ function makellf2(δt   ::Array{Float64,1},
             # trait likelihood
             for j = Base.OneTo(2)
                 @simd for i = wf23[j]:wl23[j]
-                    println(ll)                                      
                     ll += logdnorm_tc(X[(i+1),j], 
                         X[i,j] + Eδx(LA[i,j], m, δt[i]), 
                         δt[i]*σ²)::Float64

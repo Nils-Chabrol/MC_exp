@@ -114,7 +114,6 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
                                                                     Xnc1, Xnc2, brl, wcol, bridx_a, 
                                                                     trios, wXp, σ²prior,αprior, mprior, np, parvec, 
                                                                     nburn, screen_print)
-    println(llc)
 
      # log probability of collision
     max_δt = maximum(δt)::Float64
@@ -162,11 +161,11 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
             for up = parvec
 
                 # update X[i]
-                #if up > 3
-                #    llc = mhr_upd_X(up, Xc, δXc,δYc, σ²c ,mc , αc, llc, LAnc)
+                if up > 3
+                    llc = mhr_upd_X(up, Xc, δXc,δYc, σ²c ,mc , αc, llc, LAnc)
                 
                 # if σ² is updated
-                if up == 1
+                elseif up == 1
                     llc, prc, σ²c = mhr_upd_σ²2(σ²c, Xc, llc, prc, ptn[1], 
                                                 LAnc, mc, σ²prior, σ²upd_llr)
                 #update α
