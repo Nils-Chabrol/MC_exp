@@ -1,4 +1,3 @@
-module mcexp_burn
 #=
 
 Burning phase for tribe.
@@ -51,7 +50,7 @@ function burn_mcexp(total_llf     ::Function,
                     nburn   ::Int64,
                     screen_print::Int64,
                     obj_ar  ::Float64   = 0.234,
-                    tune_int::Int64     = 100)
+                    tune_int::Int64     = 1000)
 
   nstep, ntip, narea = size(Yc)
   # likelihood and prior
@@ -178,9 +177,9 @@ function burn_mcexp(total_llf     ::Function,
         end
 
       #update α
-      elseif up == 2
-         αp = mulupt(αc, ptn[2])::Float64
-
+      #=elseif up == 2
+         αp = mulupt(αc, 1.)::Float64
+         println(αc)
       #   #likelihood ratio
          llr,LAp = αupd_llr(Xc, δXc, δYc, LAnc, wcol, mc, αp, σ²c, nstep)
 
@@ -193,11 +192,10 @@ function burn_mcexp(total_llf     ::Function,
            αc  = αp::Float64
            copyto!(LAnc, LAp)
            lac[2] += 1
-         end
+         end=#
        # update m
-      else
+      #=else
          mp = mulupt(mc, ptn[3])::Float64
-
          #likelihood ratio
          llr = mupd_llr(Xc, LAnc, mc, mp, σ²c)::Float64
 
@@ -209,7 +207,7 @@ function burn_mcexp(total_llf     ::Function,
            prc += prr
            mc  = mp
            lac[3] += 1 
-         end
+         end=#
       end
 
       ## make DA updates with some Pr
@@ -238,6 +236,14 @@ function burn_mcexp(total_llf     ::Function,
           ar     = lac[j]/lup[j]
           ptn[j] = scalef(ptn[j],ar)
           ltn[j] = 0
+          lac[j] = 0
+          lup[j] = 0
+          if j ==3
+            println("New iteration")
+            println(mc)
+            println(ar)
+            println(ptn[j])
+          end
         end
       end
 

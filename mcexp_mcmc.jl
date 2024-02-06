@@ -164,17 +164,17 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
                 if up > 3
                     llc = mhr_upd_X(up, Xc, δXc,δYc, σ²c ,mc , αc, llc, LAnc)
                 
-                # if σ² is updated
+                #if σ² is updated
                 elseif up == 1
                     llc, prc, σ²c = mhr_upd_σ²2(σ²c, Xc, llc, prc, ptn[1], 
                                                 LAnc, mc, σ²prior, σ²upd_llr)
                 #update α
-                elseif up == 2
-                   llc, prc, αc, LAnc = mhr_upd_α(αc,Xc, δXc, δYc, llc, prc, ptn[2], LAnc, wcol, mc, σ²c, αprior, nstep, αupd_llr)
+#=                elseif up == 2
+                   llc, prc, αc, LAnc = mhr_upd_α(αc,Xc, δXc, δYc, llc, prc, ptn[2], LAnc, wcol, mc, σ²c, αprior, nstep, αupd_llr)=#
 
                 # update m
-                else up==3
-                   llc, prc, mc = mhr_upd_m(mc,Xc, llc, prc, ptn[2], LAnc, σ²c, mprior, nstep, mupd_llr)
+#=                else up==3
+                   llc, prc, mc = mhr_upd_m(mc, Xc, llc, prc, ptn[2], LAnc, σ²c, mprior, nstep, mupd_llr)=#
                 end
             end
 

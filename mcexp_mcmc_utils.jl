@@ -491,13 +491,17 @@ function mhr_upd_m( mc      ::Float64,
   prr = llrdexp_x(mp, mc, mprior)
 
   if -randexp() < (llr + prr+log(mp/mc))
-
     llc += llr
     prc += prr
     mc  = mp
   end
   return (llc, prc, mc)::Tuple{Float64,Float64,Float64}
 end
+
+
+
+
+
 
 
 function deltaX2!(δX   ::Array{Float64,3}, 
@@ -802,4 +806,17 @@ function makellr_σmαupd(δt  ::Vector{Float64},
         return llr::Float64,LAp::Array{Float64,2}
     end
     return fσ, fm, fα
+end
+
+##New kernel
+
+function bactrian(p ::Float64, tn ::Float64)
+
+  density(y ::Float64) = 1/(2*tn*√(2*π*(1-0.95^2)))*(exp(-(y-p+0.95*tn)^2/(2*(1-0.95^2)tn^2)) + exp(-(y-p-0.95*tn)^2/(2*(1-0.95^2)tn^2)))
+  return density
+end
+
+
+function rand(rng::AbstractRNG, s::Spl)
+    # ... generate a single sample from s
 end

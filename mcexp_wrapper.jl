@@ -1,4 +1,3 @@
-module mcexp_wrapper
 #=
 
 tribe wrapper.
@@ -85,8 +84,8 @@ function mcexp(tree_file   ::String,
                data_file   ::String,
                out_file    ::String,
                min_dt      ::Float64           = 0.01,
-               niter       ::Int64             = 5000,
-               nburn       ::Int64             = 50,
+               niter       ::Int64             = 1,
+               nburn       ::Int64             = 500,
                nthin       ::Int64             = 1,
                saveXY      ::Tuple{Bool,Int64} = (false, 1_000),
                saveDM      ::Tuple{Bool,Int64} = (false, 1_000),
@@ -135,9 +134,9 @@ function mcexp(tip_values  ::Dict{Int64,Float64},
                bts         ::Array{Float64,1},
                out_file    ::String,
                min_dt      ::Float64           = 0.01,
-               niter       ::Int64             = 50000,
-               nburn       ::Int64             = 50,
-               nthin       ::Int64             = 1,
+               niter       ::Int64             = 500_000,
+               nburn       ::Int64             = 1_000,
+               nthin       ::Int64             = 100,
                saveXY      ::Tuple{Bool,Int64} = (false, 1_000),
                saveDM      ::Tuple{Bool,Int64} = (false, 1_000),
                αi          ::Float64           = 1e-1,

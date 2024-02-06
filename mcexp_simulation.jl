@@ -1,4 +1,3 @@
-module mcexp_simulation
 
 reps_per_period(br_length::Float64, const_δt::Float64) = 
 round(Int64,cld(br_length,const_δt))
@@ -363,4 +362,3 @@ function plot_MC(X_initial::Float64,
 end
 
 
-end #end of the module
