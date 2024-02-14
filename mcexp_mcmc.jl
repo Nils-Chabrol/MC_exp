@@ -11,13 +11,13 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
     nburn       ::Int64             = 500_000,
     saveXY      ::Tuple{Bool,Int64} = (false, 1_000),
     saveDM      ::Tuple{Bool,Int64} = (false, 1_000),
-    σ²prior     ::Float64           = 1e-1,
-    αprior      ::Float64           = 1e-1,
-    mprior      ::Float64           = 1e-1,
+    σ²prior     ::Float64           = 10,
+    αprior      ::Float64           = 10,
+    mprior      ::Float64           = 10,
     out_file    ::String            = "tribe_results",
-    weight      ::NTuple{4,Float64} = (0.3,0.3,0.3,5e-3),
+    weight      ::NTuple{4,Float64} = (0.001,0.3,0.3,5e-3),
     σ²i         ::Float64           = 1.,
-    αi          ::Float64           = .5,
+    αi          ::Float64           = 1.,
     mi          ::Float64           = 1.,
     stbrl       ::Float64           = 1.,
     screen_print::Int64             = 5)
@@ -25,16 +25,16 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
     printstyled("Data successfully processed", bold = true,color=:green)
     # dims
     nstep, ntip, narea  = size(Yc)
-
     # coupled nodes for X
     Xnc1 = ncoup[:,1]
     Xnc2 = ncoup[:,2]
-
     # which nodes are not NaN in Xc, without the final tips.
     wXp = setdiff(LinearIndices(Xc)[findall(!isnan, Xc)], nstep:nstep:length(Xc))
 
+
     # tie trait coupled nodes
     Xc[Xnc2] = Xc[Xnc1]
+    Yc[Xnc2] = Yc[Xnc1]
 
     #create object with column indices
     wcol = create_wcol(Xc)
@@ -101,7 +101,6 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
     append!(parvec, repeat(4:np, inner = ceil(Int64,np*weight[4]))) #weight of the X.
 
 
-
     # create update functions for Xbr, Y, Ybr and XYbr
     mhr_upd_Xbr     = make_mhr_upd_Xbr2(wcol, nstep, ntip, nedge, 
     bridx, brct, total_llr)
@@ -114,6 +113,7 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
                                                                     Xnc1, Xnc2, brl, wcol, bridx_a, 
                                                                     trios, wXp, σ²prior,αprior, mprior, np, parvec, 
                                                                     nburn, screen_print)
+
 
      # log probability of collision
     max_δt = maximum(δt)::Float64
@@ -135,14 +135,13 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
         LDlog  = zeros(Float64, nstep, ntip, narea, dmlogs)
         end
     end
-
     # progress bar
     p = Progress(niter, dt=screen_print, desc="mcmc...", barlen=20, color=:green)
-
+    Accept_X = 0
+    Number_tries=0
   # create X parameter update function
-    mhr_upd_X = make_mhr_upd_X2(Xc, Xnc1, Xnc2, wcol, ptn, wXp, nstep,
+    mhr_upd_X = make_mhr_upd_X2(Xc, Xnc1, Xnc2, wcol, ptn, wXp, nstep, δt,
                 ntip, Xupd_llr, Rupd_llr)
-
     # write to file
     open(out_file*".log", "w")
 
@@ -157,43 +156,50 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
         for it = Base.OneTo(niter)
             # update vector order
             shuffle!(parvec)
-
             for up = parvec
 
                 # update X[i]
                 if up > 3
                     llc = mhr_upd_X(up, Xc, δXc,δYc, σ²c ,mc , αc, llc, LAnc)
-                
                 #if σ² is updated
                 elseif up == 1
                     llc, prc, σ²c = mhr_upd_σ²2(σ²c, Xc, llc, prc, ptn[1], 
                                                 LAnc, mc, σ²prior, σ²upd_llr)
+
                 #update α
 #=                elseif up == 2
                    llc, prc, αc, LAnc = mhr_upd_α(αc,Xc, δXc, δYc, llc, prc, ptn[2], LAnc, wcol, mc, σ²c, αprior, nstep, αupd_llr)=#
 
                 # update m
-#=                else up==3
-                   llc, prc, mc = mhr_upd_m(mc, Xc, llc, prc, ptn[2], LAnc, σ²c, mprior, nstep, mupd_llr)=#
+                else
+                   llc, prc, mc = mhr_upd_m(mc, Xc, llc, prc, ptn[3], LAnc, σ²c, mprior, nstep, mupd_llr)
                 end
             end
 
             # make DA updates with some Pr
             #make X branch update
-            if rand() < 1.0
+#=            if rand() < 2e-3
                σ²ϕ = σ²ϕprop()
+               A=llc
                llc = mhr_upd_Xbr(rand(Base.OneTo(nedge-1)),
                    Xc,  σ²c, mc, αc, σ²ϕ, llc, 
                    LAnc, δXc, δYc)
+               if A!=llc  
+                    println("Accepted")
+                end
             end
 
             #make X trio update
-            if rand() < 1.0
+            if rand() < 2e-3
                 σ²ϕ = σ²ϕprop()
+                A=llc
                 llc = mhr_upd_Xtrio(rand(trios),
                     Xc, σ²c, mc, αc, σ²ϕ, llc, 
                     LAnc, δXc, δYc)
-            end # end parameter loop
+                if A!=llc  
+                    println("Accepted")
+                end
+            end # end parameter loop=#
 
             # log parameters
             lthin += 1
@@ -258,6 +264,6 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
 
 end
 
-return llc, prc, σ²c, mc, αc, Xc, Yc
+return llc, prc, σ²c, mc, αc, Xc, Yc, Accept_X/Number_tries
 
 end

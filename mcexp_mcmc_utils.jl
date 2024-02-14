@@ -18,13 +18,13 @@ function make_mhr_upd_X2(X        ::Array{Float64,2},
                         ptn      ::Array{Float64,1},
                         wXp      ::Array{Int64,1},
                         nstep        ::Int64,
+                        δt        ::Array{Float64,1},
                         ntip     ::Int64,
                         Xupd_llr ::Function,
                         Rupd_llr ::Function)
 
   #Cartesian Indices
   Xcidx = CartesianIndices(X)
-
   rj = Xcidx[Xnc2[findfirst(isone, Xnc1)]][2] #position de la première spéciation (?)
 
   xpi  = fill(NaN, ntip)
@@ -47,7 +47,6 @@ function make_mhr_upd_X2(X        ::Array{Float64,2},
 
       # if root
       if upx == 1
-
         # allocate
         @simd for i = Base.OneTo(ntip)
           xpi[i] =  Xc[1,i]
@@ -55,9 +54,7 @@ function make_mhr_upd_X2(X        ::Array{Float64,2},
 
         # update xi
         addupt!(xpi, ptn, 1, up)
-
         xpi[rj] = xpi[1]::Float64
-
         llr = Rupd_llr(xpi, Xc, σ²c)::Float64
 
         if -randexp() < llr #Si proposition est acceptée.
@@ -77,10 +74,11 @@ function make_mhr_upd_X2(X        ::Array{Float64,2},
             δxi[i,j] = δXc[i,j,xi]
           end
         end
-
+        xppi=Xc[xi-1, xj]
         # update xi
-        addupt!(xpi, ptn, xj, up) #ptn ?
-
+        addupt!(xpi, ptn, xj, up) 
+        # xpi[xj] = rand(Normal(xppi+Eδx(LAnc[xi-1,xj], m, δt[xi]), δt[xi]σ²c))
+          # addupt2!(xpi,xj, σ²c)
         if in(upx, Xnc1)        # if an internal node
           xpi[Xcidx[Xnc2[findfirst(isequal(upx),Xnc1)]][2]] = xpi[xj] #???
         end
@@ -88,7 +86,6 @@ function make_mhr_upd_X2(X        ::Array{Float64,2},
         # calculate new averages
         Xupd_linavg2!(δxi, δYc, lani, wcol, xpi, xi, xj, mc, αc)
         llr = Xupd_llr(xi, xpi, Xc, lani,  LAnc, mc, σ²c)::Float64
-
         if -randexp() < llr
           llc        += llr::Float64
           Xc[xi,:]    = xpi::Array{Float64,1}
@@ -105,6 +102,63 @@ end
 
 
 
+function makellr_XRupd2(δt   ::Vector{Float64}, 
+                        wcol ::Array{Array{Int64,1},1})
+
+    δt1 = δt[1]
+    wci = wcol[1]
+
+    function fx(xi  ::Int64,
+        xpi ::Array{Float64,1},
+        X   ::Array{Float64,2},
+        lapi::Array{Float64,1},
+        LA  ::Array{Float64,2},
+        m   ::Float64,
+        σ²  ::Float64)
+
+        # normal likelihoods
+        llr::Float64 = 0.0
+
+        @inbounds begin
+        # loop for parent nodes
+            δxim1 = δt[xi-1]
+            for j = wcol[xi-1]
+                llr += llrdnorm_x(xpi[j], X[xi,j], 
+                    X[xi-1,j] + Eδx(LA[xi-1,j], m, δxim1), 
+                    δxim1*σ²)
+            end
+
+            # loop for daughter nodes
+            δxi = δt[xi]
+            for j = wcol[xi]
+                llr += llrdnorm_μ(X[xi+1, j],
+                        xpi[j]  + Eδx(lapi[j],  m, δxi),
+                        X[xi,j] + Eδx(LA[xi,j], m, δxi),
+                        δxi*σ²)
+            end
+        end
+        return llr::Float64
+    end
+
+    function fr(xpi ::Array{Float64,1},
+                X   ::Array{Float64,2},
+                σ²  ::Float64)
+
+        llr::Float64 = 0.0
+
+        @inbounds begin
+
+            # loop for daughter nodes
+
+            for j = wci
+                llr += llrdnorm_μ(X[2,j], xpi[j], X[1,j], δt1*σ²)
+            end
+        end
+        return llr::Float64
+    end
+
+    return fx, fr
+end
 
 
 """
@@ -243,7 +297,6 @@ function Xupd_linavg2!(δxi  ::Array{Float64,2},
                       αc    ::Float64)
 
   @inbounds begin
-
     # estimate pairwise distances
     wci = wcol[xi]
     for l = wci, j = wci
@@ -262,10 +315,10 @@ function Xupd_linavg2!(δxi  ::Array{Float64,2},
         lani[l] += sign(x) * m * exp(-αc*x^2)
       end
     end
-
+  end
   return nothing
 end
-end
+
 
 """
     upbranchX!(j    ::Int64, 
@@ -437,8 +490,10 @@ function mhr_upd_α( αc      ::Float64,
                     αprior  ::Float64,
                     nstep   ::Int64,
                     αupd_llr::Function)
-  αp = mulupt(αc, rand() < 0.3 ? αtn : 4.0*αtn)::Float64
-        #likelihood ratio
+#=  αp = mulupt(αc, rand() < 0.3 ? αtn : 4.0*αtn)::Float64=#
+  log_αp = StrawHat(log(αc), αtn)::Float64
+  αp = exp(log_αp)        #likelihood ratio
+  
   llr,LAp = αupd_llr(Xc, δXc, δYc, LAc, wcol, mc, αp, σ²c, nstep)
   # prior ratio
   prr = llrdexp_x(αp, αc, αprior)
@@ -454,7 +509,7 @@ end
 
 
 
-
+tuning_scaler(tn ::Float64, ar ::Float64) = tn*tan(ar*π/2)/tan(0.3*π/2)::Float64
 
 
 
@@ -479,13 +534,11 @@ function mhr_upd_m( mc      ::Float64,
                     mprior  ::Float64,
                     nstep   ::Int64,
                     mupd_llr::Function)
-  mp = mulupt(mc, rand() < 0.3 ? mtn : 4.0*mtn)::Float64
+  log_mp = StrawHat(log(mc), mtn)::Float64
         #likelihood ratio
+  mp = exp(log_mp)
   llr = mupd_llr(Xc, LAc, mc, mp, σ²c)::Float64
   #if llr==0.0
-  #  println(mc)
-  #  println(mp)
-  #  println(llr)
   #end
   # prior ratio
   prr = llrdexp_x(mp, mc, mprior)
@@ -608,7 +661,6 @@ function makellf2(δt   ::Array{Float64,1},
     end
     # normal constant
     normC = -0.5*log(2.0π)
-
     function llf(X     ::Array{Float64,2},
         LA    ::Array{Float64,2},
         σ²    ::Float64,
@@ -618,7 +670,7 @@ function makellf2(δt   ::Array{Float64,1},
         @inbounds begin
 
             # trait likelihood
-            for j = Base.OneTo(2)
+            for j = Base.OneTo(ntip)
                 @simd for i = wf23[j]:wl23[j]
                     ll += logdnorm_tc(X[(i+1),j], 
                         X[i,j] + Eδx(LA[i,j], m, δt[i]), 
@@ -660,62 +712,6 @@ llrdnorm_xμ(xp::Float64, xc::Float64, μp::Float64, μc::Float64, σ²::Float64
 
 
 
-function makellr_XRupd2(δt   ::Vector{Float64}, 
-                        wcol ::Array{Array{Int64,1},1})
-
-    δt1 = δt[1]
-    wci = wcol[1]
-
-    function fx(xi  ::Int64,
-        xpi ::Array{Float64,1},
-        X   ::Array{Float64,2},
-        lapi::Array{Float64,1},
-        LA  ::Array{Float64,2},
-        m   ::Float64,
-        σ²  ::Float64)
-
-        # normal likelihoods
-        llr::Float64 = 0.0
-
-        @inbounds begin
-        # loop for parent nodes
-            δxim1 = δt[xi-1]
-            for j = wcol[xi-1]
-                llr += llrdnorm_x(xpi[j], X[xi,j], 
-                    X[xi-1,j] + Eδx(LA[xi-1,j], m, δxim1), 
-                    δxim1*σ²)
-            end
-
-            # loop for daughter nodes
-            δxi = δt[xi]
-            for j = wcol[xi]
-                llr += llrdnorm_μ(X[xi+1, j],
-                        xpi[j]  + Eδx(lapi[j],  m, δxi),
-                        X[xi,j] + Eδx(LA[xi,j], m, δxi),
-                        δxi*σ²)
-            end
-        end
-        return llr::Float64
-    end
-
-    function fr(xpi ::Array{Float64,1},
-                X   ::Array{Float64,2},
-                σ²  ::Float64)
-
-        llr::Float64 = 0.0
-
-        @inbounds begin
-
-            # loop for daughter nodes
-            for j = wci
-                llr += llrdnorm_μ(X[2,j], xpi[j], X[1,j], δt1*σ²)
-            end
-        end
-        return llr::Float64
-    end
-
-    return fx, fr
-end
 
 function makellr_σmαupd(δt  ::Vector{Float64}, 
     Y   ::Array{Int64,3}, 
@@ -734,7 +730,6 @@ function makellr_σmαupd(δt  ::Vector{Float64},
             mc ::Float64,
             σ²c::Float64,
             σ²p::Float64)
-
         llr::Float64 = 0.0
 
         @inbounds begin
@@ -743,8 +738,10 @@ function makellr_σmαupd(δt  ::Vector{Float64},
                     llr += llrdnorm_σ²(X[(i+1),j],  
                             X[i,j] + Eδx(LA[i,j], mc, δt[i]), 
                             δt[i]*σ²p, δt[i]*σ²c)
+                    
                 end
             end
+
         end
         return llr::Float64
     end
@@ -810,13 +807,34 @@ end
 
 ##New kernel
 
-function bactrian(p ::Float64, tn ::Float64)
+function Bactrian(p ::Float64, tn ::Float64, m::Float64=0.95)
+  s = √(1-m^2)
+  z = m + randn() + s
+  rdunif = rand() < 0.5
+  sign = rdunif ? -1 : 1
+  z=z*sign
+  return z
+end
 
-  density(y ::Float64) = 1/(2*tn*√(2*π*(1-0.95^2)))*(exp(-(y-p+0.95*tn)^2/(2*(1-0.95^2)tn^2)) + exp(-(y-p-0.95*tn)^2/(2*(1-0.95^2)tn^2)))
-  return density
+function StrawHat(p::Float64, tn::Float64, a::Float64=1., b::Float64 = 1.35)
+  y=.0
+  u1, u2,u3 = rand(3)
+  u1<a/(3*b-a) ? y = a*u2^(1/3) : y = rand(Uniform(a,b))
+  if u3<1/2
+   y=-y
+  end 
+  return p + tn*y
 end
 
 
-function rand(rng::AbstractRNG, s::Spl)
-    # ... generate a single sample from s
+"""
+    addupt(p::Float64, tn::Float64)
+
+Gaussian parameter window move to vector.
+"""
+function addupt2!(p::Vector{Float64}, j::Int64, σ²::Float64)
+
+  @inbounds p[j] += randn() * σ²
+
+  return nothing
 end

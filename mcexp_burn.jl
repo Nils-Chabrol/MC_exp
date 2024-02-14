@@ -65,6 +65,15 @@ function burn_mcexp(total_llf     ::Function,
 
   # rest of tuning parameters
   ptn = fill(0.1, np) 
+    
+
+
+
+
+  αc = .5
+
+
+
 
   # initialize acceptance log
   ltn = zeros(Int64, np)
@@ -96,12 +105,12 @@ function burn_mcexp(total_llf     ::Function,
     shuffle!(parvec)
     for up = parvec
       # update X
-      if up > 3 #comprends pas cette étape.
+      if up > 3 
 
         # X updates
         @inbounds begin
 
-          upx = wXp[up - 3] #pourquoi -6 ?
+          upx = wXp[up - 3] 
 
           # if root
           if upx == 1
@@ -134,9 +143,12 @@ function burn_mcexp(total_llf     ::Function,
                 δxi[i,j] = δXc[i,j,xi]
               end
             end
-
+            xppi=Xc[xi-1, xj]
             # update xi
-            addupt!(xpi, ptn, xj, up)
+            addupt2!(xpi, xj, σ²) 
+            # xpi[xj] = rand(Normal(xppi+Eδx(LAnc[xi-1,xj], m, δt[xi]), δt[xi]σ²c))
+            # update xi
+            # addupt!(xpi, ptn, xj, up)
 
             if in(upx, Xnc1)        # if an internal node
               xpi[Xcidx[Xnc2[findfirst(isequal(upx),Xnc1)]][2]] = xpi[xj]
@@ -162,10 +174,10 @@ function burn_mcexp(total_llf     ::Function,
       end
       # if σ² is updated
       if up == 1
+
         σ²p = mulupt(σ²c, ptn[1])::Float64
         #likelihood ratio
         llr = σ²upd_llr(Xc, LAnc, mc, σ²c, σ²p)::Float64
-
         # prior ratio
         prr = llrdexp_x(σ²p, σ²c, σ²prior)
 
@@ -174,12 +186,11 @@ function burn_mcexp(total_llf     ::Function,
           prc += prr::Float64
           σ²c  = σ²p::Float64
           lac[1] += 1
-        end
-
+        end      
       #update α
       #=elseif up == 2
-         αp = mulupt(αc, 1.)::Float64
-         println(αc)
+         log_αp = StrawHat(log(αc), ptn[2])::Float64
+         αp = exp(log_αp)
       #   #likelihood ratio
          llr,LAp = αupd_llr(Xc, δXc, δYc, LAnc, wcol, mc, αp, σ²c, nstep)
 
@@ -194,8 +205,9 @@ function burn_mcexp(total_llf     ::Function,
            lac[2] += 1
          end=#
        # update m
-      #=else
-         mp = mulupt(mc, ptn[3])::Float64
+      elseif up == 3
+         log_mp = StrawHat(log(mc), ptn[3])::Float64
+         mp = exp(log_mp)
          #likelihood ratio
          llr = mupd_llr(Xc, LAnc, mc, mp, σ²c)::Float64
 
@@ -207,12 +219,12 @@ function burn_mcexp(total_llf     ::Function,
            prc += prr
            mc  = mp
            lac[3] += 1 
-         end=#
+         end
       end
 
       ## make DA updates with some Pr
       # make X branch update
-      if rand() < 2e-3
+#=      if rand() < 2e-3
         σ²ϕ = σ²ϕprop()
         llc = mhr_upd_Xbr(rand(Base.OneTo(nedge-1)),
                           Xc, σ²c, mc,αc, σ²ϕ, llc, 
@@ -225,7 +237,7 @@ function burn_mcexp(total_llf     ::Function,
         llc = mhr_upd_Xtrio(rand(trios),
                             Xc, σ²c, mc, αc, σ²ϕ, llc, 
                             LAnc, δXc, δYc)
-      end
+      end=#
 
       # log number of updates
       ltn[up] += 1
@@ -234,16 +246,10 @@ function burn_mcexp(total_llf     ::Function,
         wts = findall(isequal(tune_int),ltn)      # which to scale
         for j = wts
           ar     = lac[j]/lup[j]
-          ptn[j] = scalef(ptn[j],ar)
+          ptn[j] = tuning_scaler(ptn[j],ar)
           ltn[j] = 0
           lac[j] = 0
           lup[j] = 0
-          if j ==3
-            println("New iteration")
-            println(mc)
-            println(ar)
-            println(ptn[j])
-          end
         end
       end
 

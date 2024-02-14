@@ -204,7 +204,7 @@ function MC(X_initial::Float64,
 
   # bounds checks for parameters
   0.0 >= σ² && error("σ² has to be > 0.0")
-  0.0 >= m && error("m has to be > 0.0")
+  # 0.0 >= m && error("m has to be > 0.0")
 
   tree, bts = read_nexus(tree_file)
 
@@ -293,7 +293,7 @@ function plot_MC(X_initial::Float64,
 
   # bounds checks for parameters
   0.0 >= σ² && error("σ² has to be > 0.0")
-  0.0 >= m && error("m has to be > 0.0")
+  # 0.0 >= m && error("m has to be > 0.0")
 
   tree, bts = read_nexus(tree_file)
 
@@ -355,10 +355,11 @@ function plot_MC(X_initial::Float64,
   end
 
   tip_traits = Dict(convert(Int64, alive[i]) => Xt[i]   for i = Base.OneTo(nalive))
-
+  tip_areas = 
+  Dict(convert(Int64, alive[i]) => [1]   for i = Base.OneTo(nalive))
   pop!(bts)
 
-  return plot(Time_values,X_values)
+  return tip_traits, tip_areas, tree, bts, plot(Time_values,X_values)
 end
 
 
