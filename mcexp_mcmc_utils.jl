@@ -76,9 +76,9 @@ function make_mhr_upd_X2(X        ::Array{Float64,2},
         end
         xppi=Xc[xi-1, xj]
         # update xi
-        addupt!(xpi, ptn, xj, up) 
+        # addupt!(xpi, ptn, xj, up) 
         # xpi[xj] = rand(Normal(xppi+Eδx(LAnc[xi-1,xj], m, δt[xi]), δt[xi]σ²c))
-          # addupt2!(xpi,xj, σ²c)
+         addupt2!(xpi,xj, σ²c)
         if in(upx, Xnc1)        # if an internal node
           xpi[Xcidx[Xnc2[findfirst(isequal(upx),Xnc1)]][2]] = xpi[xj] #???
         end
@@ -512,6 +512,54 @@ end
 tuning_scaler(tn ::Float64, ar ::Float64) = tn*tan(ar*π/2)/tan(0.3*π/2)::Float64
 
 
+function write_nexus(n        ::Int64  =  10,
+          scale     ::Float64 = 1. ,
+          b         ::Float64 = 1.,
+          d         ::Float64 = 0.,
+          file_name ::String = "test.tre")
+  reval("""
+    library(\"phytools\")
+    tree     <- pbtree( n = $n, b = $b, d = $d, scale = $scale)
+    write.nexus(tree, file= '$file_name', translate = F)
+    """)
+    return nothing
+end
+
+function read_nexus(tree_file      ::String; 
+                    order          ::String = "cladewise", 
+                    branching_times::Bool = true)
+
+    str = reval("""
+        library(\"phytools\")
+        tree     <- read.nexus('$tree_file') 
+        tree     <- reorder(tree, order = '$order')
+        edge     <- .subset2(tree,'edge')
+        Nnode    <- .subset2(tree,'Nnode')
+        tiplabel <- .subset2(tree,'tip.label')
+        edlength <- .subset2(tree,'edge.length')
+        list(edge,Nnode,tiplabel,edlength)
+        """)
+
+    edge     = rcopy(str[1])
+    edge     = convert(Array{Int64},edge)
+    Nnode    = rcopy(str[2])
+    Nnode    = convert(Int64,Nnode)
+    tiplabel = rcopy(str[3])
+    edlength = rcopy(str[4])
+    edlength = convert(Array{Float64},edlength)
+
+    tree = rtree(edge, edlength, tiplabel, Nnode)
+
+    if branching_times
+        brtimes = reval("""
+            brtimes <- branching.times(tree)
+            """)
+        brtimes = rcopy(brtimes)
+        return tree, brtimes
+    else
+        return tree
+    end
+end
 
 
 

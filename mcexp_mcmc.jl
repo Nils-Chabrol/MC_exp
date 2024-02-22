@@ -136,9 +136,7 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
         end
     end
     # progress bar
-    p = Progress(niter, dt=screen_print, desc="mcmc...", barlen=20, color=:green)
-    Accept_X = 0
-    Number_tries=0
+    p = Progress(niter, dt=screen_print, desc="mcmc...", barlen=20, color=:red)
   # create X parameter update function
     mhr_upd_X = make_mhr_upd_X2(Xc, Xnc1, Xnc2, wcol, ptn, wXp, nstep, δt,
                 ntip, Xupd_llr, Rupd_llr)
@@ -264,6 +262,6 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
 
 end
 
-return llc, prc, σ²c, mc, αc, Xc, Yc, Accept_X/Number_tries
+return llc, prc, σ²c, mc, αc, Xc, Yc
 
 end

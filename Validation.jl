@@ -26,7 +26,6 @@ include("mcexp_unmodified_functions.jl")
 include("mcexp_data_initializer.jl")
 include("mcexp_simulation.jl")
 include("mcexp_mcmc_utils.jl")
-include("mcexp_unmodified_functions.jl")
 include("mcexp_wrapper.jl")
 include("mcexp_burn.jl")
 include("mcexp_mcmc.jl")
@@ -100,13 +99,13 @@ end
 
 σ²,α, m = map(rexp, ones(3)*10)
 tree_file  = "treest.tre"
-write_nexus(30, 1., 1., 0., "treest.tre") 
+write_nexus(10, 1., 1., 0., "treest.tre") 
 tip_values, tip_areas, tree, bts = MC(1., tree_file,σ² =  σ²,m =  m, α = α)
 
-tip_values, tip_areas, tree, bts, plotMC = plot_MC(1., tree_file, σ² =  σ²,m =  m, α = .5)
+tip_values, tip_areas, tree, bts, plotMC = plot_MC(1., tree_file, σ² =  .2,m =  .3, α = 1.)
 plot(plotMC)
 
-out_file = "BM+m"
+out_file = "BM+m+alphafixe"
 R, δt= mcexp(tip_values, tip_areas, tree, bts, out_file)
 
 times = cumsum(δt)

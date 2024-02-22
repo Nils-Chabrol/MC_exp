@@ -65,15 +65,6 @@ function burn_mcexp(total_llf     ::Function,
 
   # rest of tuning parameters
   ptn = fill(0.1, np) 
-    
-
-
-
-
-  αc = .5
-
-
-
 
   # initialize acceptance log
   ltn = zeros(Int64, np)
@@ -145,10 +136,10 @@ function burn_mcexp(total_llf     ::Function,
             end
             xppi=Xc[xi-1, xj]
             # update xi
-            addupt2!(xpi, xj, σ²) 
+            # addupt2!(xpi, xj, σ²) 
             # xpi[xj] = rand(Normal(xppi+Eδx(LAnc[xi-1,xj], m, δt[xi]), δt[xi]σ²c))
             # update xi
-            # addupt!(xpi, ptn, xj, up)
+             addupt!(xpi, ptn, xj, up)
 
             if in(upx, Xnc1)        # if an internal node
               xpi[Xcidx[Xnc2[findfirst(isequal(upx),Xnc1)]][2]] = xpi[xj]
