@@ -326,9 +326,11 @@ function plot_MC(X_initial::Float64,
   nalive = lastindex(alive)
 
   rate = sqrt(const_δt*σ²)
+  println(rate)
   # loop through waiting times
   for j in Base.OneTo(nbt)
     nreps = reps_per_period(swt[j], const_δt)
+    println(nreps)
   # simulate during the speciation waiting time
     nconstant_sim2!(Xt, X_values, Time_values,Time, nreps, const_δt, m,rate, α, ψ, θ)
     if j == nbt

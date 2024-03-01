@@ -196,7 +196,7 @@ function burn_mcexp(total_llf     ::Function,
            lac[2] += 1
          end=#
        # update m
-      elseif up == 3
+#=      elseif up == 3
          log_mp = StrawHat(log(mc), ptn[3])::Float64
          mp = exp(log_mp)
          #likelihood ratio
@@ -210,25 +210,8 @@ function burn_mcexp(total_llf     ::Function,
            prc += prr
            mc  = mp
            lac[3] += 1 
-         end
+         end=#
       end
-
-      ## make DA updates with some Pr
-      # make X branch update
-#=      if rand() < 2e-3
-        σ²ϕ = σ²ϕprop()
-        llc = mhr_upd_Xbr(rand(Base.OneTo(nedge-1)),
-                          Xc, σ²c, mc,αc, σ²ϕ, llc, 
-                           LAnc, δXc, δYc)
-      end
-
-      # make X trio update
-      if rand() < 2e-3
-        σ²ϕ = σ²ϕprop()
-        llc = mhr_upd_Xtrio(rand(trios),
-                            Xc, σ²c, mc, αc, σ²ϕ, llc, 
-                            LAnc, δXc, δYc)
-      end=#
 
       # log number of updates
       ltn[up] += 1
@@ -250,5 +233,3 @@ function burn_mcexp(total_llf     ::Function,
   end
   return llc, prc, Xc, Yc, LAnc, δXc, δYc, σ²c, αc, mc, ptn
 end
-
-

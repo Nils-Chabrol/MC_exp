@@ -169,35 +169,10 @@ function mcexp_mcmc(Xc          ::Array{Float64,2},
                    llc, prc, αc, LAnc = mhr_upd_α(αc,Xc, δXc, δYc, llc, prc, ptn[2], LAnc, wcol, mc, σ²c, αprior, nstep, αupd_llr)=#
 
                 # update m
-                else
-                   llc, prc, mc = mhr_upd_m(mc, Xc, llc, prc, ptn[3], LAnc, σ²c, mprior, nstep, mupd_llr)
+#=                else
+                   llc, prc, mc = mhr_upd_m(mc, Xc, llc, prc, ptn[3], LAnc, σ²c, mprior, nstep, mupd_llr)=#
                 end
             end
-
-            # make DA updates with some Pr
-            #make X branch update
-#=            if rand() < 2e-3
-               σ²ϕ = σ²ϕprop()
-               A=llc
-               llc = mhr_upd_Xbr(rand(Base.OneTo(nedge-1)),
-                   Xc,  σ²c, mc, αc, σ²ϕ, llc, 
-                   LAnc, δXc, δYc)
-               if A!=llc  
-                    println("Accepted")
-                end
-            end
-
-            #make X trio update
-            if rand() < 2e-3
-                σ²ϕ = σ²ϕprop()
-                A=llc
-                llc = mhr_upd_Xtrio(rand(trios),
-                    Xc, σ²c, mc, αc, σ²ϕ, llc, 
-                    LAnc, δXc, δYc)
-                if A!=llc  
-                    println("Accepted")
-                end
-            end # end parameter loop=#
 
             # log parameters
             lthin += 1

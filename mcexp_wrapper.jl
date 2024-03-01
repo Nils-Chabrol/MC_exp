@@ -130,7 +130,7 @@ function mcexp(tip_values  ::Dict{Int64,Float64},
                tip_areas   ::Dict{Int64,Array{Int64,1}},
                tree        ::rtree,
                bts         ::Array{Float64,1},
-               out_file    ::String,
+               out_file    ::String;
                min_dt      ::Float64           = 0.01,
                niter       ::Int64             = 10_000,
                nburn       ::Int64             = 1000,
@@ -178,19 +178,19 @@ function mcexp(tip_values  ::Dict{Int64,Float64},
                tip_areas   ::Dict{Int64,Array{Int64,1}},
                tree        ::rtree,
                bts         ::Array{Float64,1},
-               out_file    ::String,
-               αi          ::Float64,
-               mi          ::Float64,
-               min_dt      ::Float64           = 0.02,
-               niter       ::Int64             = 100_000,
-               nburn       ::Int64             = 10_000,
+               out_file    ::String;
+               αi          ::Float64           = 0. ,
+               mi          ::Float64           = 0.,
+               min_dt      ::Float64           = 0.05,
+               niter       ::Int64             = 300_000,
+               nburn       ::Int64             = 20_000,
                nthin       ::Int64             = 10,
                saveXY      ::Tuple{Bool,Int64} = (false, 1_000),
                saveDM      ::Tuple{Bool,Int64} = (false, 1_000),
                σ²prior     ::Float64           = 10.,
                αprior     ::Float64           = 1e-1,
                mprior     ::Float64           = 1e-1,               
-               weight      ::NTuple{4,Float64} = (0.15,0.15,0.15,20e-3),
+               weight      ::NTuple{4,Float64} = (1.,0.15,0.15,20e-3),
                delim       ::Char              = '\t',
                eol         ::Char              = '\r',
                screen_print::Int64             = 5)
@@ -220,12 +220,12 @@ function mcexp(tip_values  ::Dict{Int64,Float64},
 
 end
 
-function mcexp(tip_values  ::Dict{Int64,Float64},
+#=function mcexp(tip_values  ::Dict{Int64,Float64},
                tip_areas   ::Dict{Int64,Array{Int64,1}},
                tree        ::rtree,
                bts         ::Array{Float64,1},
-               out_file    ::String,
-               αi          ::Float64,
+               out_file    ::String;
+               αi          ::Float64           = 0.,
                min_dt      ::Float64           = 0.02,
                niter       ::Int64             = 1_000_000,
                nburn       ::Int64             = 100_000,
@@ -262,4 +262,4 @@ function mcexp(tip_values  ::Dict{Int64,Float64},
 
   return R,δt
 
-end
+end=#
